@@ -81,6 +81,8 @@ return /******/ (function(modules) { // webpackBootstrap
 Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__events__ = __webpack_require__(1);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__defaultOptions__ = __webpack_require__(2);
+var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
+
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
@@ -109,8 +111,8 @@ try {
       supportsPassive = true;
     }
   });
-  window.addEventListener("testPassive", null, opts);
-  window.removeEventListener("testPassive", null, opts);
+  window.addEventListener('testPassive', null, opts);
+  window.removeEventListener('testPassive', null, opts);
 } catch (e) {}
 
 var bulmaCarousel = function (_EventEmitter) {
@@ -130,7 +132,8 @@ var bulmaCarousel = function (_EventEmitter) {
     }
 
     _this._clickEvents = ['click'];
-    _this.options = Object.assign({}, __WEBPACK_IMPORTED_MODULE_1__defaultOptions__["a" /* default */], options);
+    /// Set default options and merge with instance defined
+    _this.options = _extends({}, __WEBPACK_IMPORTED_MODULE_1__defaultOptions__["a" /* default */], options);
     if (_this.element.dataset.autoplay) {
       _this.options.autoplay = _this.element.dataset.autoplay;
     }
@@ -142,6 +145,9 @@ var bulmaCarousel = function (_EventEmitter) {
     }
     if (_this.element.classList.contains('carousel-animate-fade')) {
       _this.options.size = 1;
+    }
+    if (_this.element.dataset.stopautoplayoninteraction) {
+      _this.options.stopautoplayoninteraction = _this.element.dataset.stopautoplayoninteraction;
     }
 
     _this.forceHiddenNavigation = false;
@@ -173,6 +179,9 @@ var bulmaCarousel = function (_EventEmitter) {
     value: function init() {
       this.container = this.element.querySelector('.carousel-container');
       this.items = this.element.querySelectorAll('.carousel-item');
+      [].forEach.call(this.items, function (item, i) {
+        item.origin_pos = i;
+      });
       this.currentItem = {
         element: this.element,
         node: this.element.querySelector('.carousel-item.is-active'),
@@ -182,6 +191,7 @@ var bulmaCarousel = function (_EventEmitter) {
       if (!this.currentItem.node) {
         this.currentItem.node = this.items[0];
         this.currentItem.node.classList.add('is-active');
+        this.currentItem.node.style.opacity = 1;
         this.currentItem.pos = 0;
       }
       this.forceHiddenNavigation = this.items.length <= 1;
@@ -260,7 +270,9 @@ var bulmaCarousel = function (_EventEmitter) {
             }
             if (_this3._autoPlayInterval) {
               clearInterval(_this3._autoPlayInterval);
-              _this3._autoPlay(_this3.optionsdelay);
+              if (!_this3.options.stopautoplayoninteraction) {
+                _this3._autoPlay(_this3.options.delay);
+              }
             }
             _this3._slide('previous');
           }, supportsPassive ? { passive: true } : false);
@@ -275,7 +287,9 @@ var bulmaCarousel = function (_EventEmitter) {
             }
             if (_this3._autoPlayInterval) {
               clearInterval(_this3._autoPlayInterval);
-              _this3._autoPlay(_this3.options.delay);
+              if (!_this3.options.stopautoplayoninteraction) {
+                _this3._autoPlay(_this3.options.delay);
+              }
             }
             _this3._slide('next');
           }, supportsPassive ? { passive: true } : false);
@@ -401,7 +415,7 @@ var bulmaCarousel = function (_EventEmitter) {
       this.nextControl = this.element.querySelector('.carousel-nav-right');
 
       if (this.items.length <= 1 || this.forceHiddenNavigation) {
-        if (this.container) {
+        if (this.container && !this.element.classList.contains('carousel-animate-fade')) {
           this.container.style.left = '0';
         }
         if (this.previousControl) {
@@ -485,6 +499,9 @@ var bulmaCarousel = function (_EventEmitter) {
       if (this.items.length) {
         this.oldItemNode = this.currentItem.node;
         this.emit(BULMA_CAROUSEL_EVENTS.slideBefore, this.currentItem);
+        if (this.options.stopautoplayoninteraction) {
+          clearInterval(this._autoPlayInterval);
+        }
         // initialize direction to change order
         if (direction === 'previous') {
           this.currentItem.node = this._previous(this.currentItem.node);
@@ -532,6 +549,37 @@ var bulmaCarousel = function (_EventEmitter) {
       this._autoPlayInterval = setInterval(function () {
         _this5._slide('next');
       }, delay);
+    }
+  }, {
+    key: 'gotoPostion',
+    value: function gotoPostion(pos) {
+      if (this.items.length) {
+        if (this._autoPlayInterval) {
+          clearInterval(this._autoPlayInterval);
+        }
+
+        // initialize direction to change order
+        this.currentItem.node = this.items[pos];
+        // add reverse class
+        if (!this.element.classList.contains('carousel-animate-fade')) {
+          this.element.classList.add('is-reversing');
+          this.container.style.transform = 'translateX(' + -Math.abs(this.offset) + 'px)';
+        }
+
+        this.currentItem.node.classList.add('is-active');
+
+        // Disable transition to instant change order
+        this.element.classList.remove('carousel-animated');
+
+        this._setOrder();
+      }
+    }
+  }, {
+    key: 'resetAutoPlay',
+    value: function resetAutoPlay() {
+      if (this.items.length) {
+        this._autoPlay(this.options.delay);
+      }
     }
   }], [{
     key: 'attach',
@@ -747,6 +795,7 @@ var EventEmitter = function () {
 var defaultOptions = {
   size: 1,
   autoplay: false,
+  stopautoplayoninteraction: false, // stop autoplay if a user interacts with the controls
   delay: 5000,
   threshold: 50, //required min distance traveled to be considered swipe
   restraint: 100, // maximum distance allowed at the same time in perpendicular direction

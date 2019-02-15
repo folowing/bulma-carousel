@@ -14,13 +14,14 @@ const onSwipeEnd = Symbol('onSwipeEnd');
 var supportsPassive = false;
 try {
   var opts = Object.defineProperty({}, 'passive', {
-    get: function() {
+    get: function () {
       supportsPassive = true;
     }
   });
-  window.addEventListener("testPassive", null, opts);
-  window.removeEventListener("testPassive", null, opts);
-} catch (e) {}
+  window.addEventListener('testPassive', null, opts);
+  window.removeEventListener('testPassive', null, opts);
+} catch (e) {
+}
 
 export default class bulmaCarousel extends EventEmitter {
   constructor(selector, options = {}) {
@@ -41,10 +42,10 @@ export default class bulmaCarousel extends EventEmitter {
       ...options
     };
     if (this.element.dataset.autoplay) {
-      this.options.autoplay =  this.element.dataset.autoplay;
+      this.options.autoplay = this.element.dataset.autoplay;
     }
     if (this.element.dataset.delay) {
-      this.options.delay =  this.element.dataset.delay;
+      this.options.delay = this.element.dataset.delay;
     }
     if (this.element.dataset.size && !this.element.classList.contains('carousel-animate-fade')) {
       this.options.size = this.element.dataset.size;
@@ -90,6 +91,9 @@ export default class bulmaCarousel extends EventEmitter {
   init() {
     this.container = this.element.querySelector('.carousel-container');
     this.items = this.element.querySelectorAll('.carousel-item');
+    [].forEach.call(this.items, (item, i) => {
+      item.origin_pos = i;
+    });
     this.currentItem = {
       element: this.element,
       node: this.element.querySelector('.carousel-item.is-active'),
@@ -175,7 +179,7 @@ export default class bulmaCarousel extends EventEmitter {
             }
           }
           this._slide('previous');
-        }, supportsPassive ? { passive: true } : false);
+        }, supportsPassive ? {passive: true} : false);
       });
     }
 
@@ -192,26 +196,26 @@ export default class bulmaCarousel extends EventEmitter {
             }
           }
           this._slide('next');
-        }, supportsPassive ? { passive: true } : false);
+        }, supportsPassive ? {passive: true} : false);
       });
     }
 
     // Bind swipe events
-    this.element.addEventListener('touchstart', this[onSwipeStart], supportsPassive ? { passive: true } : false);
-    this.element.addEventListener('mousedown', this[onSwipeStart], supportsPassive ? { passive: true } : false);
-    this.element.addEventListener('touchmove', this[onSwipeMove], supportsPassive ? { passive: true } : false);
-    this.element.addEventListener('mousemove', this[onSwipeMove], supportsPassive ? { passive: true } : false);
-    this.element.addEventListener('touchend', this[onSwipeEnd], supportsPassive ? { passive: true } : false);
-    this.element.addEventListener('mouseup', this[onSwipeEnd], supportsPassive ? { passive: true } : false);
+    this.element.addEventListener('touchstart', this[onSwipeStart], supportsPassive ? {passive: true} : false);
+    this.element.addEventListener('mousedown', this[onSwipeStart], supportsPassive ? {passive: true} : false);
+    this.element.addEventListener('touchmove', this[onSwipeMove], supportsPassive ? {passive: true} : false);
+    this.element.addEventListener('mousemove', this[onSwipeMove], supportsPassive ? {passive: true} : false);
+    this.element.addEventListener('touchend', this[onSwipeEnd], supportsPassive ? {passive: true} : false);
+    this.element.addEventListener('mouseup', this[onSwipeEnd], supportsPassive ? {passive: true} : false);
   }
 
   destroy() {
-    this.element.removeEventListener('touchstart', this[onSwipeStart], supportsPassive ? { passive: true } : false);
-    this.element.removeEventListener('mousedown', this[onSwipeStart], supportsPassive ? { passive: true } : false);
-    this.element.removeEventListener('touchmove', this[onSwipeMove], supportsPassive ? { passive: true } : false);
-    this.element.removeEventListener('mousemove', this[onSwipeMove], supportsPassive ? { passive: true } : false);
-    this.element.removeEventListener('touchend', this[onSwipeEnd], supportsPassive ? { passive: true } : false);
-    this.element.removeEventListener('mouseup', this[onSwipeEnd], supportsPassive ? { passive: true } : false);
+    this.element.removeEventListener('touchstart', this[onSwipeStart], supportsPassive ? {passive: true} : false);
+    this.element.removeEventListener('mousedown', this[onSwipeStart], supportsPassive ? {passive: true} : false);
+    this.element.removeEventListener('touchmove', this[onSwipeMove], supportsPassive ? {passive: true} : false);
+    this.element.removeEventListener('mousemove', this[onSwipeMove], supportsPassive ? {passive: true} : false);
+    this.element.removeEventListener('touchend', this[onSwipeEnd], supportsPassive ? {passive: true} : false);
+    this.element.removeEventListener('mouseup', this[onSwipeEnd], supportsPassive ? {passive: true} : false);
   }
 
   /**
@@ -324,7 +328,7 @@ export default class bulmaCarousel extends EventEmitter {
       ref;
     for (
       i = j = 2, ref = Array.from(this.items).length; (
-        2 <= ref
+      2 <= ref
         ? j <= ref
         : j >= ref); i = 2 <= ref
       ? ++j
@@ -373,7 +377,7 @@ export default class bulmaCarousel extends EventEmitter {
     if (this.items.length) {
       this.oldItemNode = this.currentItem.node;
       this.emit(BULMA_CAROUSEL_EVENTS.slideBefore, this.currentItem);
-      if(this.options.stopautoplayoninteraction) {
+      if (this.options.stopautoplayoninteraction) {
         clearInterval(this._autoPlayInterval);
       }
       // initialize direction to change order
@@ -382,7 +386,7 @@ export default class bulmaCarousel extends EventEmitter {
         // add reverse class
         if (!this.element.classList.contains('carousel-animate-fade')) {
           this.element.classList.add('is-reversing');
-          this.container.style.transform = `translateX(${ - Math.abs(this.offset)}px)`;
+          this.container.style.transform = `translateX(${-Math.abs(this.offset)}px)`;
         }
       } else {
         // Reorder items
@@ -416,5 +420,34 @@ export default class bulmaCarousel extends EventEmitter {
     this._autoPlayInterval = setInterval(() => {
       this._slide('next');
     }, delay);
+  }
+
+  gotoPostion(pos) {
+    if (this.items.length) {
+      if (this._autoPlayInterval) {
+        clearInterval(this._autoPlayInterval);
+      }
+
+      // initialize direction to change order
+      this.currentItem.node = this.items[pos];
+      // add reverse class
+      if (!this.element.classList.contains('carousel-animate-fade')) {
+        this.element.classList.add('is-reversing');
+        this.container.style.transform = `translateX(${-Math.abs(this.offset)}px)`;
+      }
+
+      this.currentItem.node.classList.add('is-active');
+
+      // Disable transition to instant change order
+      this.element.classList.remove('carousel-animated');
+
+      this._setOrder();
+    }
+  }
+
+  resetAutoPlay() {
+    if (this.items.length) {
+      this._autoPlay(this.options.delay);
+    }
   }
 }
